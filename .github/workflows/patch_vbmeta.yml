@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       ARCHITECTURE:
-        description: 'Architecture (Para tu Moto E6 usa armeabi-v7a)'
+        description: 'Arquitectura (Usa armeabi-v7a)'
         required: true
         default: 'armeabi-v7a'
         type: choice
@@ -12,10 +12,7 @@ on:
         - x86_64
         - x86
         - arm64-v8a
-        - armeabi-v7a # Corregido: era armeabi
-      VBMETA_URL:
-        description: 'URL directa de tu vbmeta.img (Google Drive o Dropbox)'
-        required: true
+        - armeabi-v7a
 
 jobs:
   build:
@@ -24,13 +21,12 @@ jobs:
     - name: Check Out
       uses: actions/checkout@v3
 
-    - name: Download VBMeta
-      run: wget -O vbmeta.img "${{ github.event.inputs.VBMETA_URL }}"
-
     - name: Give Permission and Run Patch
       run: |
-        # Usamos el nombre correcto de la carpeta del repo
+        # Cambiamos permisos al binario según la arquitectura elegida
         chmod +x ${{ github.event.inputs.ARCHITECTURE }}/vbmeta-disable-verification
+        
+        # Ejecutamos el parche sobre el vbmeta.img que está en la raíz
         ./${{ github.event.inputs.ARCHITECTURE }}/vbmeta-disable-verification vbmeta.img
 
     - name: Upload to Release
@@ -39,4 +35,4 @@ jobs:
         artifacts: "vbmeta.img"
         tag: "patched-${{ github.run_id }}"
         token: ${{ secrets.GITHUB_TOKEN }}
-        body: "VBMeta parchado para Moto E6 Play (Bali)"
+        body: "VBMeta parchado exitosamente para Moto E6 Play (Bali)"

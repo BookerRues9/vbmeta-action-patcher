@@ -4,35 +4,54 @@ on:
   workflow_dispatch:
     inputs:
       ARCHITECTURE:
-        description: 'Arquitectura (Usa armeabi-v7a)'
+        description: 'Architecture'
         required: true
-        default: 'armeabi-v7a'
+        default: 'x86_64'
         type: choice
         options:
         - x86_64
         - x86
         - arm64-v8a
-        - armeabi-v7a
+        - armaebi-v7a
+
+permissions:
+  contents: write
 
 jobs:
   build:
+    if: github.event.repository.owner.id == github.event.sender.id
     runs-on: ubuntu-latest
     steps:
+ 
     - name: Check Out
-      uses: actions/checkout@v3
-
-    - name: Give Permission and Run Patch
+      uses: actions/checkout@v3.1.0
+      
+    - name: Operating System Information
       run: |
-        # Cambiamos permisos al binario según la arquitectura elegida
-        chmod +x ${{ github.event.inputs.ARCHITECTURE }}/vbmeta-disable-verification
+        uname -a
         
-        # Ejecutamos el parche sobre el vbmeta.img que está en la raíz
+    - name: Patch File Information
+      run: |
+        file ${{ github.event.inputs.ARCHITECTURE }}/vbmeta-disable-verification
+        
+    - name: Give Permissio and Run Patch
+      run: |
+        chmod +x ${{ github.event.inputs.ARCHITECTURE }}/vbmeta-disable-verification
         ./${{ github.event.inputs.ARCHITECTURE }}/vbmeta-disable-verification vbmeta.img
 
     - name: Upload to Release
-      uses: ncipollo/release-action@v1
+      uses: ncipollo/release-action@v1.12.0
       with:
-        artifacts: "vbmeta.img"
-        tag: "patched-${{ github.run_id }}"
+        artifacts: vbmeta.img
+        Name: Patched VBMeta
+        draft: false
+        prerelease: true
+        tag: ${{ github.run_id }}
         token: ${{ secrets.GITHUB_TOKEN }}
-        body: "VBMeta parchado exitosamente para Moto E6 Play (Bali)"
+        body: |
+          Your vbmeta image are now ready!
+          Flash it now.
+
+    - name: Link to Release
+      run: |
+        echo "https://github.com/${GITHUB_REPOSITORY}/releases/tag/${{ github.run_id }}"
